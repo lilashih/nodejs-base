@@ -1,0 +1,590 @@
+﻿openapi: 3.0.3
+info:
+  title: Node.js Base API
+  version: 1.0.0
+  description: |
+    使用 Express、MySQL 與 JWT 的基礎 API 專案。
+
+    分頁參數：`page` 預設為 `1`；`perPage` 預設為 `100`，最大為 `100`。
+
+    認證可使用 Cookie Session 或 Bearer JWT。系統會優先驗證 Cookie 中的登入憑證；請求未帶 Cookie 時，才會驗證 Authorization 標頭中的 Bearer token。若 Cookie 中的憑證無效，不會改用 Bearer token。使用 Cookie 認證新增、修改或刪除資料時，請求須提供與主機相同的 Origin 或 Referer。
+servers:
+  - url: /api
+tags:
+  - name: Health
+    description: 服務狀態
+  - name: Auth
+    description: 使用者認證
+  - name: Posts
+    description: 文章 CRUD
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: 取得服務狀態
+      responses:
+        "200":
+          description: 服務正常
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        $ref: "#/components/schemas/Health"
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: 註冊使用者
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: 註冊成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: 登入
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: 登入成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /auth/session/register:
+    post:
+      tags: [Auth]
+      summary: 以 Cookie Session 註冊
+      description: 成功後設定 HttpOnly Cookie，回應不包含 token。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CookieAuthResponse"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /auth/session/login:
+    post:
+      tags: [Auth]
+      summary: 以 Cookie Session 登入
+      description: 成功後設定 Path=/api、HttpOnly、SameSite=Lax 的 Cookie；Secure 依部署設定。回應不包含 token。
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CookieAuthResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /auth/session/logout:
+    post:
+      tags: [Auth]
+      summary: 清除 Cookie Session
+      description: 不需有效登入，Cookie 過期後仍可清除。
+      responses:
+        "200":
+          description: 操作成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  /auth/me:
+    get:
+      tags: [Auth]
+      summary: 取得目前登入使用者
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          user:
+                            $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /posts:
+    get:
+      tags: [Posts]
+      summary: 查詢已發布文章清單
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: keyword
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/PostStatus"
+      responses:
+        "200":
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          posts:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Post"
+                          pagination:
+                            $ref: "#/components/schemas/Pagination"
+    post:
+      tags: [Posts]
+      summary: 新增文章
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "201":
+          description: 新增成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+  /posts/mine:
+    get:
+      tags: [Posts]
+      summary: 查詢自己的文章（含草稿）
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PerPage"
+        - name: keyword
+          in: query
+          schema:
+            type: string
+            maxLength: 100
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/PostStatus"
+      responses:
+        "200":
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          posts:
+                            type: array
+                            items:
+                              $ref: "#/components/schemas/Post"
+                          pagination:
+                            $ref: "#/components/schemas/Pagination"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /posts/mine/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Posts]
+      summary: 取得自己的單篇文章（含草稿）
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /posts/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      tags: [Posts]
+      summary: 取得單篇已發布文章
+      responses:
+        "200":
+          description: 查詢成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      tags: [Posts]
+      summary: 完整更新文章
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PostInput"
+      responses:
+        "200":
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PostResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "422":
+          $ref: "#/components/responses/ValidationError"
+    delete:
+      tags: [Posts]
+      summary: 刪除文章
+      security:
+        - cookieAuth: []
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 刪除成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/SuccessResponse"
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        maxProperties: 0
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+components:
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: token
+      description: 透過 Cookie Session 登入 API 設定的 HttpOnly Cookie。
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 登入取得 token 後，於 Authorization header 傳入 `Bearer <token>`；在 Swagger UI 可按 Authorize 輸入 token。
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    Page:
+      name: page
+      in: query
+      description: 文章清單頁碼，預設為 1。
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PerPage:
+      name: perPage
+      in: query
+      description: 每頁文章筆數，預設為 100，最大為 100。
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 100
+  responses:
+    Unauthorized:
+      description: 尚未登入或 Token 無效
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: 沒有操作權限
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: 找不到資料
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: 資料重複
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    ValidationError:
+      description: 輸入資料有誤
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ValidationErrorResponse"
+  schemas:
+    SuccessResponse:
+      type: object
+      required: [message, data]
+      properties:
+        message:
+          type: string
+        data:
+          type: object
+    ErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+    ValidationErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                errors:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                      message:
+                        type: string
+    Health:
+      type: object
+      required: [name, version, mode, status]
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        mode:
+          type: string
+        status:
+          type: string
+          example: ok
+    User:
+      type: object
+      required: [id, name, email, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+    RegisterInput:
+      type: object
+      required: [name, email, password]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 72
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+    CookieAuthResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user:
+                  $ref: "#/components/schemas/User"
+    AuthResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                user:
+                  $ref: "#/components/schemas/User"
+                token:
+                  type: string
+    PostStatus:
+      type: string
+      enum: [draft, published]
+    PostInput:
+      type: object
+      required: [title, content, status]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: 去除前後空白後不可為空
+        content:
+          type: string
+          minLength: 1
+        status:
+          $ref: "#/components/schemas/PostStatus"
+        coverImage:
+          type: string
+          nullable: true
+          description: 封面圖片，可傳入圖片 Base64 Data URL（如 data:image/png;base64,...）、既有圖片路徑或 null
+    Post:
+      type: object
+      required: [id, title, content, coverImage, status, userId, authorName, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        coverImage:
+          type: string
+          nullable: true
+          description: 封面圖片相對存取路徑
+        status:
+          $ref: "#/components/schemas/PostStatus"
+        userId:
+          type: integer
+        authorName:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    PostResponse:
+      allOf:
+        - $ref: "#/components/schemas/SuccessResponse"
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                post:
+                  $ref: "#/components/schemas/Post"
+    Pagination:
+      type: object
+      required: [total, perPage, currentPage, lastPage]
+      properties:
+        total:
+          type: integer
+          description: 資料總筆數
+        perPage:
+          type: integer
+          description: 每頁筆數
+        currentPage:
+          type: integer
+          description: 當前頁數
+        lastPage:
+          type: integer
+          description: 最後一頁頁數
+
+
+

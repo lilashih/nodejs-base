@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@src/*": [
+        "src/*"
+      ]
+    },
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "ES2022",
+    "checkJs": false
+  },
+  "include": [
+    "src/**/*.js",
+    "test/**/*.js",
+    "scripts/**/*.js",
+    "ecosystem.config.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "storage",
+    "coverage"
+  ]
+}
