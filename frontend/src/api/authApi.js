@@ -1,4 +1,4 @@
-﻿import request from "../helper/request.js";
+﻿import request from "@src/helper/request.js";
 
 export default {
   login: (data) => request.request("POST", "auth/session/login", data, { handleAuthError: false }),

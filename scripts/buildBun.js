@@ -36,24 +36,6 @@ const executeCommand = (command, arguments_, options = {}) => {
     }
 };
 
-const isBmpOnlyIco = (filePath) => {
-    try {
-        const buffer = fs.readFileSync(filePath);
-        if (buffer.length < 6) return false;
-        const count = buffer.readUInt16LE(4);
-        for (let index = 0; index < count; index++) {
-            const offset = 6 + index * 16;
-            const dataOffset = buffer.readUInt32LE(offset + 12);
-            if (buffer.subarray(dataOffset, dataOffset + 4).toString("hex") === "89504e47") {
-                return false;
-            }
-        }
-        return true;
-    } catch {
-        return false;
-    }
-};
-
 const removeFileIfExists = (filePath) => {
     if (fs.existsSync(filePath)) {
         try {
@@ -70,11 +52,6 @@ const resolveWindowsIconArguments = (isWindows) => {
     const iconPath = path.join(projectRoot, "frontend", "public", "favicon.ico");
     if (!fs.existsSync(iconPath)) {
         console.warn("找不到 frontend/public/favicon.ico，將使用 Bun 預設的 Windows 執行檔圖示繼續打包。");
-        return [];
-    }
-
-    if (!isBmpOnlyIco(iconPath)) {
-        console.warn("提示：frontend/public/favicon.ico 包含 PNG 壓縮格式，Bun 在 Windows 平臺僅支援未壓縮 DIB/BMP 格式；將使用 Bun 預設圖示繼續打包。");
         return [];
     }
 

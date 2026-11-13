@@ -1,6 +1,6 @@
-﻿import auth from "../config/auth.js";
-import authApi from "../api/authApi.js";
-import { broadcastAuthSignal, AuthSignal } from "../channel/authChannel.js";
+﻿import auth from "@src/config/auth.js";
+import authApi from "@src/api/authApi.js";
+import { broadcastAuthSignal, AuthSignal } from "@src/channel/authChannel.js";
 
 export const useAuth = () => ({
   user: auth.user,

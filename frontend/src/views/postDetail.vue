@@ -1,8 +1,8 @@
 ﻿<script setup>
 import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
-import postApi from "../api/postApi.js";
-import { useAuth } from "../composables/useAuth.js";
+import postApi from "@src/api/postApi.js";
+import { useAuth } from "@src/composables/useAuth.js";
 
 const route = useRoute();
 const { user } = useAuth();

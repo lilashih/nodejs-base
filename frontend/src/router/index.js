@@ -1,14 +1,14 @@
 ﻿import { createRouter, createWebHistory } from "vue-router";
-import auth from "../config/auth.js";
-import authApi from "../api/authApi.js";
-import config from "../config/config.js";
-import { subscribeAuthSignal } from "../channel/authChannel.js";
-import postList from "../views/postList.vue";
-import postDetail from "../views/postDetail.vue";
-import postForm from "../views/postForm.vue";
-import login from "../views/login.vue";
-import register from "../views/register.vue";
-import notFound from "../views/notFound.vue";
+import auth from "@src/config/auth.js";
+import authApi from "@src/api/authApi.js";
+import config from "@src/config/config.js";
+import { subscribeAuthSignal } from "@src/channel/authChannel.js";
+import postList from "@src/views/postList.vue";
+import postDetail from "@src/views/postDetail.vue";
+import postForm from "@src/views/postForm.vue";
+import login from "@src/views/login.vue";
+import register from "@src/views/register.vue";
+import notFound from "@src/views/notFound.vue";
 
 const router = createRouter({
   history: createWebHistory(config.url.view),

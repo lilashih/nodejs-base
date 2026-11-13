@@ -1,8 +1,8 @@
 ﻿<script setup>
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import postApi from "../api/postApi.js";
-import config from "../config/config.js";
+import postApi from "@src/api/postApi.js";
+import config from "@src/config/config.js";
 
 const route = useRoute();
 const router = useRouter();

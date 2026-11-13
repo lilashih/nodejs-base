@@ -1,8 +1,8 @@
 ﻿<script setup>
 import { computed } from "vue";
 import { useRouter } from "vue-router";
-import { useAuth } from "./composables/useAuth.js";
-import config from "./config/config.js";
+import { useAuth } from "@src/composables/useAuth.js";
+import config from "@src/config/config.js";
 
 const router = useRouter();
 const { user, logout } = useAuth();

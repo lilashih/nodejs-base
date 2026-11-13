@@ -1,4 +1,4 @@
-import request from "../helper/request.js";
+import request from "@src/helper/request.js";
 
 export default {
   list: (query) => request.request("GET", "posts", query),

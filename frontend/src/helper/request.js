@@ -1,6 +1,6 @@
-﻿import config from "../config/config.js";
-import auth from "../config/auth.js";
-import { broadcastAuthSignal, AuthSignal } from "../channel/authChannel.js";
+﻿import config from "@src/config/config.js";
+import auth from "@src/config/auth.js";
+import { broadcastAuthSignal, AuthSignal } from "@src/channel/authChannel.js";
 
 const appendQuery = (url, data) => {
   const params = new URLSearchParams();
